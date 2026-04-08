@@ -1,39 +1,39 @@
-# Pretraining continuo con Forgetting Control
+# Continual Pretraining with Forgetting Control
 
-Este proyecto simula **catastrophic forgetting** durante **pretraining continuo** de un language model pequeno y compara cuatro estrategias:
+This project simulates **catastrophic forgetting** during **continual pretraining** of a small language model and compares four strategies: 
 
-- `sequential_baseline`: sigue pretraining solo con datos nuevos.
-- `replay_only`: mezcla ejemplos viejos desde un `replay buffer`.
-- `ewc_only`: aplica regularizacion tipo EWC.
-- `replay_plus_ewc`: combina replay y EWC.
+- `sequential_baseline`: continues pretraining using only new data
+- `replay_only`: mixes in old samples from a `replay buffer`.
+- `ewc_only`: applies EWC-style regularization.
+- `replay_plus_ewc`: combines replay and EWC.
 
-La idea central no es hacer fine-tuning de una tarea final, sino mantener el **mismo objetivo de language modeling** mientras cambia la distribucion del corpus. Eso lo vuelve un experimento de **continual pretraining**.
+The core idea is not to fine-tune for a downstream task, but to maintain the **same language modeling objective** while the corpus distribution shifts. This makes it a **continual pretraining** experiment.
 
-## Que incluye
+## What’s Included
 
-- Generacion de dos corpora sinteticos con cambio de dominio:
-  - dominio antiguo: cientifico/tecnico
-  - dominio nuevo: financiero/regulatorio
-- Modelo causal pequeno basado en Transformer
-- `ReplayBuffer` con reservoir sampling
-- Estimacion diagonal de Fisher para EWC
-- Runner de experimentos con metricas por epoca
-- Exportacion de:
+- Generation of two synthetic corpora with domain shift:
+  - old domain: scientific/technical
+  - new domain: financial/regulatory
+- Small causal Transformer-based model
+- `ReplayBuffer` with reservoir sampling
+- Diagonal Fisher estimation for EWC
+- Experiment runner with per-epoch metrics
+- Export of:
   - `history.csv`
   - `summary.csv`
   - `dataset_preview.json`
-  - graficos `.png`
+  - `.png` plots
 
-## Metricas que reporta
+## Reported Metrics
 
-- `old_val_loss` y `old_val_perplexity`
-- `new_val_loss` y `new_val_perplexity`
-- `old_val_accuracy` y `new_val_accuracy`
-- `forgetting_score`: cuanto empeora el dominio viejo tras pretraining continuo
-- `retention_ratio`: que fraccion de la performance vieja se mantiene
-- `plasticity_gain`: cuanto mejora el dominio nuevo durante la etapa 2
+- `old_val_loss` and `old_val_perplexity`
+- `new_val_loss` and `new_val_perplexity`
+- `old_val_accuracy` and `new_val_accuracy`
+- `forgetting_score`: how much the old domain degrades after continual pretraining
+- `retention_ratio`: fraction of original performance preserved
+- `plasticity_gain`: improvement on the new domain during stage 2
 
-## Estructura
+## Structure
 
 ```text
 run_experiment.py
@@ -43,32 +43,33 @@ src/forgetting_control/strategies.py
 src/forgetting_control/experiment.py
 ```
 
-## Como correrlo
+## How to Run
 
-Modo rapido para validar pipeline:
+Quick mode to validate the pipeline:
 
 ```bash
 python run_experiment.py --quick
 ```
 
-Modo completo:
+Full run:
 
 ```bash
 python run_experiment.py --output-dir outputs/full_run
 ```
 
-## Salidas esperadas
+## Expected Outputs
 
-Al terminar, en la carpeta de salida veras:
+After completion, the output directory will contain:
 
-- `history.csv`: evolucion completa por experimento y epoca
-- `summary.csv`: comparacion final de estrategias
-- `validation_curves.png`: curvas de perplexity viejo/nuevo
-- `strategy_comparison.png`: barras con forgetting, retencion y plasticidad
+- `history.csv`: full training history per experiment and epoch
+- `summary.csv`: final comparison of strategies
+- `validation_curves.png`: old/new perplexity curves
+- `strategy_comparison.png`: bar charts for forgetting, retention, and plasticity
 
 ## Interpretacion
 
-- Si `sequential_baseline` empeora mucho en `old_val_perplexity`, hay forgetting claro.
-- Si `replay_only` baja ese dano, el buffer esta ayudando a retener conocimiento viejo.
-- Si `ewc_only` tambien mejora retencion, EWC esta frenando cambios destructivos en pesos importantes.
-- Si `replay_plus_ewc` logra buena retencion sin destruir la adaptacion al dominio nuevo, tienes la mejor evidencia del enfoque.
+- If `sequential_baseline` shows a large increase in `old_val_perplexity`, there is clear forgetting.
+- If `replay_only` reduces that damage, the buffer is helping retain prior knowledge.
+- If `ewc_only` also improves retention, EWC is constraining destructive updates on important weights.
+- If `replay_plus_ewc` achieves strong retention without hurting adaptation to the new domain, it provides the strongest evidence for the combined approach.
+
